@@ -1,5 +1,5 @@
 container-deploy
-================
+****************
 This simple concept, deploying a container monitored by systemd. Uses a lot of templating around a map/dict (container_chalk) to accmoplish the task. Yes, kubernetes is better, and there are many features that this role can't do, but some organization or individuals, might (or should) have a container running a simple service like ``task-warrior`` it listens on a TCP port and is often used personally, but could be used at a small startup to track todo's. This could facilitate that while not adding a lot of dependencies or staff/knowledge requirements.
 **This is just ansible pushing out systemd to monitor the container running.**
 
@@ -18,7 +18,7 @@ All of these are areas for improvement, and the author is attempting to be criti
  - non-tcp or non-listening containers. If you have a container that is periodically calling a service, like a database, and it is not listening for connections... You'll need to expose a port. This sucks, sorry. But the port is a form of "uid". UDP might work, but has not been tested. Let's face it the vast majority of our services are TCP (often HTTP).
 
 Requirements
-------------
+============
 none
 
 Role Variables
@@ -48,7 +48,7 @@ container_chalk dict/map
 +-----------------------+-----------------------------+------------------------+
 | container_engine  | string (required) | install docker or podman |
 +-----------------------+-----------------------------+------------------------+
-| container_config_dir  | string (required) | root tree location where environment files, label files and other config files
+| container_config_dir  | string (required) | root tree location where environment files, label files and other config files |
 +-----------------------+-----------------------------+------------------------+
 | container_image_version_tag  | string (optional:latest) | the version of the container to pull     |
 +-----------------------+-----------------------------+------------------------+
