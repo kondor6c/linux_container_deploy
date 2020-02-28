@@ -1,0 +1,7 @@
+{% if item.labels is not defined or item.labels < 1 %}
+NO_LABELS=True
+{% else %}
+{% for element in item.labels %}
+{{ element }}
+{% endfor %}
+{% endif %}

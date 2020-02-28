@@ -1,0 +1,15 @@
+---
+#- name: install podman
+#  package:
+#    name: podman
+#    state: installed
+#    update_cache: no
+- name: podman config
+  template:
+    dest: /etc/containers/storage.conf
+    src: container-storage.conf.j2
+    mode: '0644'
+    owner: root
+    group: root
+
+

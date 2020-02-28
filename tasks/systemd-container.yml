@@ -1,0 +1,95 @@
+---
+# deploy-app:
+# takes an "app" dict (defined in vars) and deploys systemd files for it, then starts it
+- name: deploy group
+  group:
+    name: deploy
+    gid: 7000
+    state: present
+- name: 'add block file'
+  file:
+    path: "{{ container_config_dir }}"
+    owner: root
+    group: deploy
+    mode: 770
+    state: directory
+- name: 'add block file'
+  file:
+    path: "{{ container_config_dir }}{{ item.name }}/{{ item.host_port }}"
+    owner: root
+    group: deploy
+    mode: 770
+    state: directory
+- name: 'container environment file'
+  template:
+    src: container-environment
+    dest: "{{ container_config_dir }}{{ item.name }}/{{ item.host_port }}.container_environment"
+    owner: 'root'
+    group: 'deploy'
+    mode: 0660
+- name: 'container labels'
+  template:
+    src: container.label
+    dest: "{{ container_config_dir }}{{ item.name }}/{{ item.host_port }}.label"
+    owner: 'root'
+    group: 'deploy'
+    mode: 0660
+- name: 'add block file'
+  file:
+    path: "{{ container_config_dir }}{{ item.name }}/{{ item.host_port }}__block"
+    owner: root
+    group: root
+    mode: 400
+    state: touch
+
+- name: 'debug systemd unit'
+  block:
+    - name: 'add block file'
+      file:
+        path: "/etc/systemd/system/{{ item.name }}--{{ item.host_port }}.service.d"
+        owner: root
+        group: root
+        mode: 774
+        state: directory
+    - name: skel create .vimrc, for new accounts
+      copy:
+        owner: root
+        group: root
+        mode: 0644
+        dest: "/etc/systemd/system/{{ item.name }}--{{ item.host_port }}.service.d/50-debug.conf"
+        content: | 
+          [Service]
+          Environment=SYSTEMD_LOG_LEVEL=debug
+  when: debug_systemd is defined
+- template:
+    src: container-config.path
+    dest: "/etc/systemd/system/{{ item.name }}--{{ item.host_port }}.path"
+    owner: 'root'
+    group: 'deploy'
+    mode: 0660
+- name: 'update app config dir'
+  template:
+    src: container-run.service
+    dest: "/etc/systemd/system/{{ item.name }}--{{ item.host_port }}.service"
+    owner: 'root'
+    group: 'deploy'
+    mode: 0660
+- name: 'start app service'
+  systemd:
+    daemon_reload: yes
+    name: "{{ item.name }}--{{ item.host_port }}.service"
+    state: restarted
+    enabled: yes #not needed since these machines should not reboot
+- systemd:
+    name: "{{ item.name }}--{{ item.host_port }}.path"
+    state: started
+    enabled: yes #not needed since these machines should not reboot
+- name: check container readiness
+  shell: "{{ item.readiness_external_cmd | replace('__self__', '127.0.0.1:' + item.host_port ) }}"
+  when: item.readiness_external_cmd is defined
+    #- name: 'it would be good to know what ports are actively used, this is an orchisstration concern register active ports new is: {{ ansible_facts.tcp_listen }}'
+    #shell: ss -ltnH sport ge 33000 |awk '{ sub(".*:","",$4); print $4}'
+    #register: detected_app_ports
+  #- name: 'auto reload on path'
+  #shell: sha1sum /usr/local/var/lib/containers/{{ item.name }}/* > /usr/local/var/lib/containers/{{ item.name }}.sha1sums
+

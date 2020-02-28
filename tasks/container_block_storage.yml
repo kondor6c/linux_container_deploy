@@ -1,0 +1,11 @@
+---
+- name: 'xfs for containers'
+  filesystem:
+    fstype: xfs
+    dev: "{{ container_block_device }}"
+    opts:  -n ftype=1
+  when: "{{ container_block_device }} not in ansible_mounts[].device"
+- name: mount storage
+  mount:
+    path: /var/lib/containers
+    src: "{{ container_block_device }}"

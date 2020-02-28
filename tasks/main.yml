@@ -1,0 +1,36 @@
+---
+- name: configure storage
+  include_tasks: "container_block_storage.yml"
+  when: container_block_device is defined
+  tags:
+    - storage
+
+- name: docker
+  include_tasks:
+    file: "{{ engine_name }}"
+  when: container_engine == 'docker'
+  tags:
+    - docker
+  loop:
+    - docker.yml
+  loop_control:
+    loop_var: engine_name
+
+- name: podman
+  include_tasks:
+    file: "{{ engine_name }}"
+  when: container_engine == 'podman' 
+  tags:
+    - podman
+  loop:
+    - libpod.yml
+  loop_control:
+    loop_var: engine_name
+
+- name: deploy container
+  include_tasks:
+    file: "systemd-container.yml"
+  when: container_chalk
+  tags:
+    - deploy
+

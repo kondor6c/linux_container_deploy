@@ -1,0 +1,33 @@
+---
+- name: install docker compose
+  package:
+    name: docker-compose
+    state: latest
+- name: install docker
+  package:
+    name: docker
+    state: latest
+- name: 'docker dir, normally created upon startup'
+  file:
+    path: "/etc/docker"
+    owner: root
+    group: docker
+    mode: 770
+    state: directory
+- name: 'config docker daemon'
+  copy:
+    dest: /etc/docker/daemon.json
+    owner: root
+    group: root
+    content: |
+      {
+        "storage-driver": "overlay2",
+        "log-driver": "journald",
+        "graph": "/var/lib/containers"
+      }
+
+- name: start big daemon
+  systemd:
+    name: docker
+    enabled: yes
+    state: started
