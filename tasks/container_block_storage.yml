@@ -5,7 +5,11 @@
     dev: "{{ container_block_device }}"
     opts:  -n ftype=1
   when: "{{ container_block_device }} not in ansible_mounts[].device"
+  tags:
+    - storage
 - name: mount storage
   mount:
     path: /var/lib/containers
     src: "{{ container_block_device }}"
+  tags:
+    - storage

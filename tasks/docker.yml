@@ -3,17 +3,26 @@
   package:
     name: docker-compose
     state: latest
+  tags:
+    - build_image
+    - docker
 - name: install docker
   package:
     name: docker
     state: latest
+  tags:
+    - build_image
+    - docker
 - name: 'docker dir, normally created upon startup'
   file:
     path: "/etc/docker"
     owner: root
-    group: docker
-    mode: 770
+    group: root
+    mode: 774
     state: directory
+  tags:
+    - build_image
+    - docker
 - name: 'config docker daemon'
   copy:
     dest: /etc/docker/daemon.json
@@ -25,9 +34,22 @@
         "log-driver": "journald",
         "graph": "/var/lib/containers"
       }
+  tags:
+    - build_image
+    - docker
 
-- name: start big daemon
+- name: enabel big daemon (for imaging)
   systemd:
     name: docker
     enabled: yes
+  tags:
+    - build_image
+    - docker
+- name: start big daemon
+  systemd:
+    name: docker
     state: started
+  tags:
+    - runtime
+    - docker
+    - deploy

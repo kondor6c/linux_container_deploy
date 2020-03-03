@@ -4,7 +4,6 @@
   when: container_block_device is defined
   tags:
     - storage
-
 - name: docker
   include_tasks:
     file: "{{ engine_name }}"
