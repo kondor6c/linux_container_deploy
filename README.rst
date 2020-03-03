@@ -156,7 +156,6 @@ Including an example of how to use your role (for instance, with variables passe
       host_port: 33500
       project: library
       container_port: 443
-      network: app-net-default
       volume_list:
         - /mnt/containers/rclone:/srv
       additional_ports:
@@ -168,8 +167,7 @@ Including an example of how to use your role (for instance, with variables passe
       host_port: 33300
       project: library
       container_port: 8080
-      net: app-net-default
-      volume_list:
+      volume:
         - /mnt/containers/jenkins:/srv
       additional_options:
         - "-v"
@@ -178,18 +176,18 @@ Including an example of how to use your role (for instance, with variables passe
       host_port: 33400
       project: library
       container_port: 443
-      net: app-net-default
-      volume_list:
+      option_map:
+        volume:
         - /mnt/containers/jenkins-waf:/srv
-      additional_ports:
+        publish:
         - 33401:8080
-      additional_options:
+        additional_options:
         - "-v"
       container_image_version_tag: latest
       container_image_location: scollazo/naxsi-waf-with-ui        
-    - hosts: servers
+    - hosts: workers
       roles:
-         - { role: username.rolename, x: 42 }
+         - { role: container-deploy, container_block_device: "/dev/vdb", container_engine: "podman" }
 
 License
 -------
