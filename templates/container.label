@@ -1,7 +1,7 @@
-{% if item.labels is not defined or item.labels < 1 %}
+{% if deploy_app.labels is not defined or deploy_app.labels < 1 %}
 NO_LABELS=True
 {% else %}
-{% for element in item.labels %}
+{% for element in deploy_app.labels %}
 {{ element }}
 {% endfor %}
 {% endif %}

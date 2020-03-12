@@ -1,0 +1,13 @@
+[Unit]
+Description=Container for {{ item.name }}
+# an Idea: Requires=devops-check-ports.service devops-check-fs.service docker-networks.service
+After=docker.service
+
+
+[Service]
+Restart=never
+Type=oneshot
+ExecStartPre=/usr/bin/gzip -d /mnt/containers/cache/*gz
+ExecStartPre=/bin/mv /mnt/containers/cache/ 
+ExecStart=bash -c 'ls /mnt/containers/cache/*tar |xargs -P2 -I@ docker import @ @'
+ExecStop=/bin/rm -rf /mnt/containers/cache/*

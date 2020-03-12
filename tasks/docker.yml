@@ -45,11 +45,11 @@
   tags:
     - build_image
     - docker
-- name: start big daemon
-  systemd:
-    name: docker
-    state: started
-  tags:
-    - runtime
-    - docker
-    - deploy
+#- name: start big daemon
+#  systemd:
+#    name: docker
+#    state: started
+#  tags:
+#    - runtime
+#    - docker
+#    - deploy

@@ -1,29 +1,29 @@
 {# checking for options being set, apply defaults as needed #}
-{% if item.option_map.cpu_count is not defined %}
+{% if deploy_app.option_map.cpu_count is not defined %}
 # action set default cpu old
-{% elif item.option_map.cap-del is not defined or item.option_map.cap-del | length < 1 %}
+{% elif deploy_app.option_map.cap-del is not defined or deploy_app.option_map.cap-del | length < 1 %}
 # action set default cap-del
-{% elif item.option_map.cap-add is not defined or item.option_map.cap-add | length < 1 %}
+{% elif deploy_app.option_map.cap-add is not defined or deploy_app.option_map.cap-add | length < 1 %}
 # action set default cap-add
-{% elif item.option_map.cpu-count is not defined %}
+{% elif deploy_app.option_map.cpu-count is not defined %}
 # action set default cpu-count
-{% elif item.option_map.cpu-quota is not defined %}
+{% elif deploy_app.option_map.cpu-quota is not defined %}
 # action set default cpu-quota
-{% elif item.option_map.blkio-weight is not defined %}
+{% elif deploy_app.option_map.blkio-weight is not defined %}
 # action set default blkio-weight
-{% elif item.option_map.memory is not defined %}
+{% elif deploy_app.option_map.memory is not defined %}
 # action set default memory
-{% elif item.option_map.network is not defined %}
+{% elif deploy_app.option_map.network is not defined %}
 # action set default network
-{% elif item.option_map.link is not defined %}
+{% elif deploy_app.option_map.link is not defined %}
 # action set default link
 
-{% elif item.option_map.mount is not defined %}
+{% elif deploy_app.option_map.mount is not defined %}
 # action set default cpu old
 
-{% elif item.option_map.volume is not defined or item.option_map.volume | length < 1 %}
-{% set vol_list = ["/mnt/containers/{{ item.name }}:/srv"] %}
-{% elif item.option_map.publish is not defined or item.option_map.publish | length < 1 %}
+{% elif deploy_app.option_map.volume is not defined or deploy_app.option_map.volume | length < 1 %}
+{% set vol_list = ["/mnt/containers/{{ deploy_app.name }}:/srv"] %}
+{% elif deploy_app.option_map.publish is not defined or deploy_app.option_map.publish | length < 1 %}
 # action set default publish ports
 {% else %}
 #unhandled
@@ -31,44 +31,44 @@
 
 # note: investigate: --device=/dev/sdc:/dev/xvdc:rwm makes sdc seen AS xvdc on the container
 [Unit]
-Description=Container for {{ item.name }}
+Description=Container for {{ deploy_app.name }}
 # an Idea: Requires=devops-check-ports.service devops-check-fs.service docker-networks.service
-After=container-{{ item.name }}-{{ item.host_port }}-config.service
+After=container-{{ deploy_app.name }}-{{ deploy_app.host_port }}-config.service
 
 
 [Service]
 Restart=on-abnormal
-EnvironmentFile=-{{ container_config_dir }}{{ item.name }}/{{ item.host_port }}.systemd_env
-#ExecStartPre=/usr/bin/sha1sum -c /etc/container/config/{{ item.name }}/{{ item.host_port }}.env.sum
-#ExecStartPre=/usr/bin/docker stop {{ item.name }}--{{ item.host_port }}
-{% if item.pre_hooks is defined %}
-ExecStartPre=-{{ item.pre_start_hooks }}
+EnvironmentFile=-{{ container_config_dir }}{{ deploy_app.name }}/{{ deploy_app.host_port }}.systemd_env
+#ExecStartPre=/usr/bin/sha1sum -c /etc/container/config/{{ deploy_app.name }}/{{ deploy_app.host_port }}.env.sum
+#ExecStartPre=/usr/bin/docker stop {{ deploy_app.name }}--{{ deploy_app.host_port }}
+{% if deploy_app.pre_hooks is defined %}
+ExecStartPre=-{{ deploy_app.pre_start_hooks }}
 {% endif %}
-ExecStart=/usr/bin/docker run --env-file={{ container_config_dir }}{{ item.name }}/{{ item.host_port }}.container_environment \
-          --label-file={{ container_config_dir }}{{ item.name }}/{{ item.host_port }}.label \
-          --publish={{ item.host_port }}:{{ item.container_port }} \
-          {% for key, value in item.option_map.items() %}
+ExecStart=/usr/bin/{{ container_engine }} run --env-file={{ container_config_dir }}{{ deploy_app.name }}/{{ deploy_app.host_port }}.container_environment \
+          --label-file={{ container_config_dir }}{{ deploy_app.name }}/{{ deploy_app.host_port }}.label \
+          --publish={{ deploy_app.host_port }}:{{ deploy_app.container_port }} \
+{% if deploy_app.option_map | length < 1 %} {% for key, value in deploy_app.option_map.items() %}
 {% if value is iterable and value is not string %} {% for entry in value %}
           --{{ key }}={{ entry }} \
 {% endfor %} {% elif value == "default" %} {% else %}
           --{{ key }}={{ value }} \
-{% endif %} {% endfor %}
-          {{ item.option_map.additional_options | default(" -l no-additionals=yes ") }} \
+{% endif %} {% endfor %} {% endif %}
+          {{ deploy_app.option_map.additional_options | default(" -l no-additionals=yes ") }} \
           --mount type=tmpfs,tmpfs-size=32M,destination=/secrets \
-          --name {{ item.name }}--{{ item.host_port }} \
-          {{ item.registry_host | default("docker.io") }}/{{ item.project }}/{{ item.container_image_name }}:{{ item.container_image_version_tag }}
+          --name {{ deploy_app.name }}--{{ deploy_app.host_port }} \
+          {{ deploy_app.registry_host | default("docker.io") }}/{{ deploy_app.project }}/{{ deploy_app.container_image_name }}:{{ deploy_app.container_image_version_tag }}
 
-{% if item.post_start_hooks is defined %}
-ExecStartPost=-{{ item.pre_hooks }}
+{% if deploy_app.post_start_hooks is defined %}
+ExecStartPost=-{{ deploy_app.pre_hooks }}
 {% endif %}
-{% if item.post_stop_hooks is defined %}
-ExecStartPost=-{{ item.pre_hooks }}
+{% if deploy_app.post_stop_hooks is defined %}
+ExecStartPost=-{{ deploy_app.pre_hooks }}
 {% endif %}
-ExecStop=/usr/bin/docker rm -f {{ item.name }}--{{ item.host_port }}
+ExecStop=/usr/bin/{{ container_engine }} rm -f {{ deploy_app.name }}--{{ deploy_app.host_port }}
 KillMode=none
 #SuccessExitStatus=systemd-analyze exit-codes 
 TimeoutStartSec=infinity
 Type=simple
-#PIDFile=/run/containers/{{ item.name }}-{{ item.host_port }}/pid
+#PIDFile=/run/containers/{{ deploy_app.name }}-{{ deploy_app.host_port }}/pid
 [Install]
 WantedBy=app-deploy.target

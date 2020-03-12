@@ -52,7 +52,7 @@ container_chalk dict/map
 +-----------------------+-----------------------------+------------------------+
 | container_image_version_tag  | string (optional:latest) | the version of the container to pull     |
 +-----------------------+-----------------------------+------------------------+
-| option_map | map (optional)  | allows for more options          |
+| option_map | map (required)  | allows for more options, if no options are desired, don't set anything inside the map, but it must be set          |
 +-----------------------+-----------------------------+------------------------+
 | option_map[addional_optoins] | map (optional) | literal strings to append to ``docker run``           |
 +-----------------------+-----------------------------+------------------------+
@@ -130,48 +130,56 @@ Including an example of how to use your role (for instance, with variables passe
       container_image_name: tynor88/rclone-mount
       container_port: 9022
       option_map:
-        cap_add:
+        cap-add:
           - sys_time
-        cap_del:
+        cap-del:
           - setuid
           - setgid
-        mem: 1024m
-        block_weight: 500
-        cpu_count: 1
-        net: app-net-default
+        memory: 1024m
+        block-weight: 500
+        cpus: 1
+        network: sidecar-net
         volume:
           - /mnt/containers/sshfs:/srv
         publish:
           - 5555:33501
       additional_options:
         - " -l fun_label=sure "
+
     - name: sshfs
       host_port: 33900
-      registry_host: quay.io
+      container_registry: quay.io
       container_port: 9022
+      option_map:
       project: nexway
       container_image_name: sshfs-server
       container_image_version_tag: latest
+
     - name: rclone-waf
       host_port: 33500
-      project: library
       container_port: 443
-      volume_list:
-        - /mnt/containers/rclone:/srv
-      additional_ports:
-        - 33501:8080
+      project: library
+      option_map:
+        volume:
+          - /mnt/containers/rclone:/srv
+        publish:
+          - 33501:8080
       additional_options:
         - "-v"
-      container_image_version: scollazo/naxsi-waf-with-ui:latest
+      container_image_name: scollazo/naxsi-waf-with-ui
+      container_image_version_tag: latest
+
     - name: jenkins
       host_port: 33300
       project: library
       container_port: 8080
-      volume:
-        - /mnt/containers/jenkins:/srv
+      option_map:
+        volume:
+          - /mnt/containers/jenkins:/srv
       additional_options:
         - "-v"
-      container_image_version: tynor88/rclone-mount:dev
+      container_image_version: tynor88/rclone-mount
+      container_image_version_tag: dev
     - name: jenkins-waf
       host_port: 33400
       project: library

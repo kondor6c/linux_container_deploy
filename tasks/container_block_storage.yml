@@ -1,15 +1,32 @@
 ---
+#- name: never modify an already mounted device or existing filesystem 
+#  assert:
+#    that: ansible_mounts | selectattr('device', 'equalto', container_block_device) | list | length > 0
+#    msg: "already mounted"
+#  loop: "{{ ansible_mounts }}"
+#  loop_control:
+#    loop_var: disk
 - name: 'xfs for containers'
   filesystem:
     fstype: xfs
-    dev: "{{ container_block_device }}"
+    dev: "/dev/{{ container_block_device }}"
     opts:  -n ftype=1
-  when: "{{ container_block_device }} not in ansible_mounts[].device"
+  when: ansible_mounts | selectattr('device', 'equalto', "/dev/" + disk.key) | list | length < 1 and disk.key == container_block_device
+  loop: "{{ ansible_devices | dict2items }}"
+  loop_control:
+    loop_var: disk
   tags:
     - storage
 - name: mount storage
   mount:
     path: /var/lib/containers
-    src: "{{ container_block_device }}"
+    state: mounted
+    fstype: xfs
+    opts: noatime
+    src: "/dev/{{ container_block_device }}"
+  when: ansible_mounts | selectattr('device', 'equalto', "/dev/" + disk.key) | list | length < 1 and disk.key == container_block_device
+  loop: "{{ ansible_devices | dict2items }}"
+  loop_control:
+    loop_var: disk
   tags:
     - storage

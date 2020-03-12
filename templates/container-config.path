@@ -1,11 +1,11 @@
 [Unit]
 Description=regenerate container if file changes
-ConditionPathExists=!/run/containers/{{ item.name }}/block
+ConditionPathExists=!/run/containers/{{ deploy_app.name }}/block
 
 [Path]
-PathChanged=/etc/containers/config/{{ item.name }}
-PathExistsGlob=/etc/containers/config/{{ item.name }}/*
-Unit={{ item.name }}--{{ item.host_port }}.service
+PathChanged=/etc/containers/config/{{ deploy_app.name }}
+PathExistsGlob=/etc/containers/config/{{ deploy_app.name }}/*
+Unit={{ deploy_app.name }}--{{ deploy_app.host_port }}.service
 
 [Install]
 WantedBy=app-run.target

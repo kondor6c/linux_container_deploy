@@ -1,9 +1,16 @@
 ---
-#- name: install podman
-#  package:
-#    name: podman
-#    state: installed
-#    update_cache: no
+- name: install podman
+  package:
+    name: podman
+    state: installed
+    update_cache: no
+- name: create dir first
+  file:
+    owner: root
+    group: root
+    path: /etc/containers
+    mode: 0775
+    state: directory
 - name: podman config
   template:
     dest: /etc/containers/storage.conf
