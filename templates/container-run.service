@@ -33,7 +33,8 @@
 [Unit]
 Description=Container for {{ deploy_app.name }}
 # an Idea: Requires=devops-check-ports.service devops-check-fs.service docker-networks.service
-After=container-{{ deploy_app.name }}-{{ deploy_app.host_port }}-config.service
+#After=container-{{ deploy_app.name }}-{{ deploy_app.host_port }}-config.service
+
 
 
 [Service]
@@ -73,4 +74,4 @@ TimeoutStartSec=infinity
 Type=simple
 #PIDFile=/run/containers/{{ deploy_app.name }}-{{ deploy_app.host_port }}/pid
 [Install]
-WantedBy=app-deploy.target
+WantedBy=container-run-all.target

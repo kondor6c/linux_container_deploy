@@ -121,78 +121,79 @@ Including an example of how to use your role (for instance, with variables passe
 
 
     - vars:
-  container_chalk:
-    - name: rclone-fuse
-      host_port: 33100
-      project: tynor88
-      container_image_version_tag: dev
-      container_registry: docker.io
-      container_image_name: tynor88/rclone-mount
-      container_port: 9022
-      option_map:
-        cap-add:
-          - sys_time
-        cap-del:
-          - setuid
-          - setgid
-        memory: 1024m
-        block-weight: 500
-        cpus: 1
-        network: sidecar-net
-        volume:
-          - /mnt/containers/sshfs:/srv
-        publish:
-          - 5555:33501
-      additional_options:
-        - " -l fun_label=sure "
-
-    - name: sshfs
-      host_port: 33900
-      container_registry: quay.io
-      container_port: 9022
-      option_map:
-      project: nexway
-      container_image_name: sshfs-server
-      container_image_version_tag: latest
-
-    - name: rclone-waf
-      host_port: 33500
-      container_port: 443
-      project: library
-      option_map:
-        volume:
-          - /mnt/containers/rclone:/srv
-        publish:
-          - 33501:8080
-      additional_options:
-        - "-v"
-      container_image_name: scollazo/naxsi-waf-with-ui
-      container_image_version_tag: latest
-
-    - name: jenkins
-      host_port: 33300
-      project: library
-      container_port: 8080
-      option_map:
-        volume:
-          - /mnt/containers/jenkins:/srv
-      additional_options:
-        - "-v"
-      container_image_version: tynor88/rclone-mount
-      container_image_version_tag: dev
-    - name: jenkins-waf
-      host_port: 33400
-      project: library
-      container_port: 443
-      option_map:
-        volume:
-        - /mnt/containers/jenkins-waf:/srv
-        publish:
-        - 33401:8080
-        additional_options:
-        - "-v"
-      container_image_version_tag: latest
-      container_image_location: scollazo/naxsi-waf-with-ui        
+        container_chalk:
+          - name: rclone-fuse
+            host_port: 33100
+            project: tynor88
+            container_image_version_tag: dev
+            registry_host: docker.io
+            container_image_name: rclone-mount
+            container_port: 9022
+            readiness_external_cmd: curl __self__/health
+            option_map:
+              cap-add:
+                - sys_time
+              cap-del:
+                - setuid
+                - setgid
+              memory: 1024m
+              block-weight: 500
+              cpus: 1
+              network: sidecar-net
+              volume:
+                - /mnt/containers/sshfs:/srv
+              publish:
+                - 5555:33501
+            additional_options:
+              - " -l fun_label=sure "
+          
+          - name: sshfs
+            host_port: 33900
+            registry_host: quay.io
+            container_port: 9022
+            project: nexway
+            container_image_name: sshfs-server
+            container_image_version_tag: latest
+          - name: rclone-waf
+            host_port: 33500
+            container_port: 443
+            project: zecure
+            option_map:
+              volume:
+                - /mnt/containers/zecure:/srv
+              rm: true
+              publish:
+                - 33501:8080
+            container_image_name: shadowd
+            registry_host: docker.io
+            container_image_version_tag: latest
+            
+          - name: jenkins
+            host_port: 33300
+            project: jenkins
+            container_port: 8080
+            option_map:
+              volume:
+                - /mnt/containers/jenkins:/srv
+            container_image_name: jenkins
+            readiness_external_cmd: curl __self__/health
+            registry_host: docker.io
+            container_image_version_tag: lts
+          - name: jenkins-waf
+            host_port: 33400
+            project: scollazo
+            container_port: 443
+            option_map:
+              volume:
+                - /mnt/containers/jenkins-waf:/srv
+              rm: true
+              publish:
+                - 33401:8080
+            container_image_version_tag: latest
+            container_image_name: naxsi-waf-with-ui
+            registry_host: docker.io
+            additional_options:
+              - " --env BACKEND_IP=192.168.122.37 "
     - hosts: workers
       roles:
          - { role: container-deploy, container_block_device: "/dev/vdb", container_engine: "podman" }

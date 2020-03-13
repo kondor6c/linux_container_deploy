@@ -1,0 +1,6 @@
+[Unit]
+Description=run deployed application containers
+Documentation=man:systemd.special(7)
+Requires=network-online.target
+After=container-cache.service
+AllowIsolate=yes

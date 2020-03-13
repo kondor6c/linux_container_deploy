@@ -67,6 +67,14 @@
     name: container-cleaner.service
     state: restarted
     enabled: yes #not needed since these machines should not reboot
+- name: 'systemd target for running containers'
+  template:
+    src: container-run-all.target
+    dest: /etc/systemd/system/
+    owner: 'root'
+    group: 'deploy'
+    mode: 0660
+
 
 - name: 'debug systemd unit'
   block:
@@ -109,7 +117,8 @@
     dest: "/etc/systemd/system/{{ deploy_app.name }}--{{ deploy_app.host_port }}.service"
     owner: 'root'
     group: 'deploy'
-    mode: 0660
+    mode: 0664
+  register: app_systemd_unit
   loop: "{{ container_chalk }}"
   loop_control:
     loop_var: deploy_app
@@ -118,7 +127,8 @@
     daemon_reload: yes
     name: "{{ deploy_app.name }}--{{ deploy_app.host_port }}.service"
     state: restarted
-    enabled: yes #not needed since these machines should not reboot
+    enabled: yes 
+  when: app_systemd_unit.changed #no need to restart a non-changed unit file, TODO: add support for config files/path changed
   loop: "{{ container_chalk }}"
   loop_control:
     loop_var: deploy_app
@@ -130,12 +140,23 @@
   loop: "{{ container_chalk }}"
   loop_control:
     loop_var: deploy_app
+- name: 'set default target'
+  command: 'systemctl set-default  container-run-all.target'
+  tags:
+    - image_build
 - name: check container readiness
   shell: "{{ deploy_app.readiness_external_cmd | replace('__self__', '127.0.0.1:' + deploy_app.host_port ) }}"
   when: deploy_app.readiness_external_cmd is defined
   loop: "{{ container_chalk }}"
   loop_control:
     loop_var: deploy_app
+- name: check internal readiness, is primary port actively listening
+  shell: "ss -ntlp |grep {{ deploy_app.host_port }} || echo port {{ deploy_app.host_port }} failed"
+  loop: "{{ container_chalk }}"
+  loop_control:
+    loop_var: deploy_app
+  register: port_status
+
     # TODO: this is a check on the machine for i in $(ls /etc/systemd/system/*service |egrep -o '[0-9][0-9]+'); do ss -ntlp |grep $i || echo "port $i failed" ;done
     # TODO: add pre-flight check of options pulling from man page
     #- name: 'it would be good to know what ports are actively used, this is an orchisstration concern register active ports new is: {{ ansible_facts.tcp_listen }}'
