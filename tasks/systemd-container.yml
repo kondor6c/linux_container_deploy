@@ -54,6 +54,20 @@
   loop_control:
     loop_var: deploy_app
 
+- name: 'clean stale and dead/inactive containers'
+  template:
+    src: container-cleaner.service
+    dest: /etc/systemd/system/
+    owner: 'root'
+    group: 'deploy'
+    mode: 0660
+- name: 'clean containers'
+  systemd:
+    daemon_reload: yes
+    name: container-cleaner.service
+    state: restarted
+    enabled: yes #not needed since these machines should not reboot
+
 - name: 'debug systemd unit'
   block:
     - name: 'add block file'
@@ -122,6 +136,8 @@
   loop: "{{ container_chalk }}"
   loop_control:
     loop_var: deploy_app
+    # TODO: this is a check on the machine for i in $(ls /etc/systemd/system/*service |egrep -o '[0-9][0-9]+'); do ss -ntlp |grep $i || echo "port $i failed" ;done
+    # TODO: add pre-flight check of options pulling from man page
     #- name: 'it would be good to know what ports are actively used, this is an orchisstration concern register active ports new is: {{ ansible_facts.tcp_listen }}'
     #shell: ss -ltnH sport ge 33000 |awk '{ sub(".*:","",$4); print $4}'
     #register: detected_app_ports

@@ -1,8 +1,7 @@
 [Unit]
-Description=Container for {{ item.name }}
+Description=Container for 
 # an Idea: Requires=devops-check-ports.service devops-check-fs.service docker-networks.service
 After=docker.service
-
 
 [Service]
 Restart=never

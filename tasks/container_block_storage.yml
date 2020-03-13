@@ -30,3 +30,23 @@
     loop_var: disk
   tags:
     - storage
+#- name: pull the images
+#  shell: "{{ container_engine }} pull {{ c.registry_host }}/{{ c.project }}/{{ c.container_image_name }}:{{ c.container_image_version_tag }}  "
+#  tags:
+#    - intensive
+#  when: container_chalk is defined 
+#  loop: "{{ container_chalk }}"
+#  loop_control:
+#    loop_var: c
+#  tags:
+#    - image_build
+#    - async_TODO
+# https://github.com/NotGlop/docker-drag/blob/master/docker_pull.py
+
+- name: cache containers at image build, then move them at runtime
+  template:
+    src: container-cache.service
+    dest: /etc/systemd/system/
+    owner: 'root'
+    group: 'deploy'
+    mode: 0660

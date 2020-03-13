@@ -1,0 +1,9 @@
+[Unit]
+Description=Clean stale container
+# an Idea: Requires=devops-check-ports.service devops-check-fs.service docker-networks.service
+After=docker.service
+
+[Service]
+Restart=never
+Type=oneshot
+ExecStart=/usr/bin/docker system prune -f
