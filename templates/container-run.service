@@ -49,8 +49,8 @@ ExecStart=/usr/bin/{{ container_engine }} run --env-file={{ container_config_dir
           --label-file={{ container_config_dir }}{{ deploy_app.name }}/{{ deploy_app.host_port }}.label \
           --publish={{ deploy_app.host_port }}:{{ deploy_app.container_port }} \
 {% if deploy_app.option_map is defined and deploy_app.option_map | length < 1 %} {% for key, value in deploy_app.option_map.items() %}
-{% if value is iterable and value is not string %} {% for entry in value %}
-          --{{ key }}={{ entry }} \
+{% if value is iterable and value is not string %} {% for entry in value %} 
+          --{{ key }}={{ entry }} \ #list value={{ value }} and key={{key}}
 {% endfor %} {% elif value == "default" %} {% else %}
           --{{ key }}={{ value }} \
 {% endif %} {% endfor %} {% endif %}

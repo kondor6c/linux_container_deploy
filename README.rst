@@ -27,47 +27,47 @@ Role Variables
 container_chalk dict/map
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-+-----------------------+-----------------------------+------------------------+
-| variable              | type and (status)           | function               |
-+=======================+=============================+========================+
-| container_port        | string (required)           | this is the port that the container is listening on    |
-+-----------------------+-----------------------------+------------------------+
-| name                  | string (required) | the primary name of this container service (not what will be pulled), this will be used on the system |
-+-----------------------+-----------------------------+------------------------+
-| alias_name            | string (not implemented) | the alternative vanitry name, think of this as a CNAME that points to "name" |
-+-----------------------+-----------------------------+------------------------+
-| host_port                    | integer (required)       | this port is used as a unique identifier AND to open a port on the host to the container   |
-+-----------------------+-----------------------------+------------------------+
-| project                    | string (required)       | the path of the container, if the image is from docker hub, use 'library' |
-+-----------------------+-----------------------------+------------------------+
-| registry_host         | string (required) | the host that has the container image, if docker hub, use 'docker.io'   |
-+-----------------------+-----------------------------+------------------------+
-| container_image_name         | string (required)      | the name of the image |
-+-----------------------+-----------------------------+------------------------+
-| container_block_device  | string (optional) | the block device to use for overlay2 |
-+-----------------------+-----------------------------+------------------------+
-| container_engine  | string (required) | install docker or podman |
-+-----------------------+-----------------------------+------------------------+
-| container_config_dir  | string (required) | root tree location where environment files, label files and other config files |
-+-----------------------+-----------------------------+------------------------+
-| container_image_version_tag  | string (optional:latest) | the version of the container to pull     |
-+-----------------------+-----------------------------+------------------------+
-| option_map | map (required)  | allows for more options, if no options are desired, don't set anything inside the map, but it must be set          |
-+-----------------------+-----------------------------+------------------------+
-| option_map[addional_optoins] | map (optional) | literal strings to append to ``docker run``           |
-+-----------------------+-----------------------------+------------------------+
-| option_map[publish] | list[string] (optional) | allows for more options          |
-+-----------------------+-----------------------------+------------------------+
-| option_map[volumes] | list[string] (optional) | allows for more options          |
-+-----------------------+-----------------------------+------------------------+
-| option_map[cap_add] | list (optional) | allows for more options          |
-+-----------------------+-----------------------------+------------------------+
-| option_map[cap_del] | key/value (optional) | allows for more options          |
-+-----------------------+-----------------------------+------------------------+
-| option_map[] | key/value (optional) | allows for more options          |
-+-----------------------+-----------------------------+------------------------+
-| option_map[any_option] | key/value (optional) | *any CLI option* and its corresponding value. See more below |
-+-----------------------+-----------------------------+------------------------+
++------------------------------+--------------------------------------+-------------------------------------------------------------------------------------------------------+
+| variable                     | type and (**status**:*default*)      | function                                                                                              |
++==============================+======================================+=======================================================================================================+
+| container_port               | string (**required**)                | this is the port that the container is listening on                                                   |
++------------------------------+--------------------------------------+-------------------------------------------------------------------------------------------------------+
+| name                         | string (**required**)                | the primary name of this container service (not what will be pulled), this will be used on the system |
++------------------------------+--------------------------------------+-------------------------------------------------------------------------------------------------------+
+| alias_name                   | string (not implemented)             | the alternative vanitry name, think of this as a CNAME that points to "name"                          |
++------------------------------+--------------------------------------+-------------------------------------------------------------------------------------------------------+
+| host_port                    | integer (**required**)               | this port is used as a unique identifier AND to open a port on the host to the container              |
++------------------------------+--------------------------------------+-------------------------------------------------------------------------------------------------------+
+| project                      | string (**required**:*library*)      | the path of the container, if the image is from docker hub, use 'library'                             |
++------------------------------+--------------------------------------+-------------------------------------------------------------------------------------------------------+
+| registry_host                | string (**required**:*docker.io*)    | the host that has the container image, if docker hub, use 'docker.io'                                 |
++------------------------------+--------------------------------------+-------------------------------------------------------------------------------------------------------+
+| container_image_name         | string (**required**)                | the name of the image                                                                                 |
++------------------------------+--------------------------------------+-------------------------------------------------------------------------------------------------------+
+| container_block_device       | string (**required**)                | the block device to use for overlay2                                                                  |
++------------------------------+--------------------------------------+-------------------------------------------------------------------------------------------------------+
+| container_engine             | string (**required**)                | install docker or podman                                                                              |
++------------------------------+--------------------------------------+-------------------------------------------------------------------------------------------------------+
+| container_config_dir         | string (**required**:*/etc/devops/*) | root tree location where environment files, label files and other config files                        |
++------------------------------+--------------------------------------+-------------------------------------------------------------------------------------------------------+
+| container_image_version_tag  | string (optional:latest)             | the version of the container to pull                                                                  |
++------------------------------+--------------------------------------+-------------------------------------------------------------------------------------------------------+
+| option_map                   | map (**required**)                   | allows list of options, if no options are desired, don't set anything inside the map                  |
++------------------------------+--------------------------------------+-------------------------------------------------------------------------------------------------------+
+| option_map[addional_options] | map (optional)                       | literal strings to append to ``docker run``                                                           |
++------------------------------+--------------------------------------+-------------------------------------------------------------------------------------------------------+
+| option_map[publish]          | list[string] (optional)              | allows for more options                                                                               |
++------------------------------+--------------------------------------+-------------------------------------------------------------------------------------------------------+
+| option_map[volumes]          | list[string] (optional)              | allows for more options                                                                               |
++------------------------------+--------------------------------------+-------------------------------------------------------------------------------------------------------+
+| option_map[cap_add]          | list (optional)                      | allows for more options                                                                               |
++------------------------------+--------------------------------------+-------------------------------------------------------------------------------------------------------+
+| option_map[cap_del]          | key/value (optional)                 | allows for more options                                                                               |
++------------------------------+--------------------------------------+-------------------------------------------------------------------------------------------------------+
+| option_map[]                 | key/value (optional)                 | allows for more options                                                                               |
++------------------------------+--------------------------------------+-------------------------------------------------------------------------------------------------------+
+| option_map[any_option]       | key/value (optional)                 | *any CLI option* and its corresponding value. See more below                                          |
++------------------------------+--------------------------------------+-------------------------------------------------------------------------------------------------------+
 
 example execution
 -----------------

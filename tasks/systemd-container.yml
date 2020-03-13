@@ -145,7 +145,7 @@
   tags:
     - image_build
 - name: check container readiness
-  shell: "{{ deploy_app.readiness_external_cmd | replace('__self__', '127.0.0.1:' + deploy_app.host_port ) }}"
+  shell: "{{ deploy_app.readiness_external_cmd | replace('__self__', '127.0.0.1:' ) }}"
   when: deploy_app.readiness_external_cmd is defined
   loop: "{{ container_chalk }}"
   loop_control:
