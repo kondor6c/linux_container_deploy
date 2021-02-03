@@ -6,30 +6,34 @@
 #  loop: "{{ ansible_mounts }}"
 #  loop_control:
 #    loop_var: disk
-- name: 'xfs for containers'
-  filesystem:
-    fstype: xfs
-    dev: "/dev/{{ container_block_device }}"
-    opts:  -n ftype=1
-  when: ansible_mounts | selectattr('device', 'equalto', "/dev/" + disk.key) | list | length < 1 and disk.key == container_block_device
-  loop: "{{ ansible_devices | dict2items }}"
-  loop_control:
-    loop_var: disk
-  tags:
-    - storage
-- name: mount storage
-  mount:
-    path: /var/lib/containers
-    state: mounted
-    fstype: xfs
-    opts: noatime
-    src: "/dev/{{ container_block_device }}"
-  when: ansible_mounts | selectattr('device', 'equalto', "/dev/" + disk.key) | list | length < 1 and disk.key == container_block_device
-  loop: "{{ ansible_devices | dict2items }}"
-  loop_control:
-    loop_var: disk
-  tags:
-    - storage
+- name: device
+  block:
+    - name: 'xfs for containers'
+      filesystem:
+        fstype: xfs
+        dev: "/dev/{{ container_block_device }}"
+        opts:  -n ftype=1
+      when: ansible_mounts | selectattr('device', 'equalto', "/dev/" + disk.key) | list | length < 1 and disk.key == container_block_device
+      loop: "{{ ansible_devices | dict2items }}"
+      register: formatted
+      loop_control:
+        loop_var: disk
+      tags:
+        - storage
+    - name: mount storage
+      mount:
+        path: /var/lib/containers
+        state: mounted
+        fstype: xfs
+        opts: noatime
+        src: "/dev/{{ container_block_device }}"
+      when: formatted.success
+      loop: "{{ ansible_devices | dict2items }}"
+      loop_control:
+        loop_var: disk
+      tags:
+        - storage
+  when: container_block_device is defined
 #- name: pull the images
 #  shell: "{{ container_engine }} pull {{ c.registry_host }}/{{ c.project }}/{{ c.container_image_name }}:{{ c.container_image_version_tag }}  "
 #  tags:
@@ -50,3 +54,70 @@
     owner: 'root'
     group: 'deploy'
     mode: 0660
+    #- name: set volumes
+    #  set_fact:
+    #    obj: >- 
+    #      {% if ansible_loop.first %}[
+    #      {% else %}
+    #      {{ obj }}
+    #      {% endif %}
+    #      {% if i['option_map']['volume'] is defined %}
+    #      {% for v in i.option_map.volume %}
+    #      { "host": "{{ v.split(':')[0] }}",
+    #      {% set host = v.split(':')[0] %}
+    #      "container": "{{ v.split(':')[1] }}",
+    #      {% set container = v.split(':')[1] %}
+    #      {% if v.split(':') | length >= 3 %}
+    #      {% set opts =  v.split(':')[2] %}
+    #      "opts": "{{ v.split(':')[2] }}"
+    #      {% else %}
+    #      "opts": "" 
+    #      {% endif -%}},{% endfor %}{% else %} {% endif %}
+    #      {% if ansible_loop.last %}]{% endif %}
+    #    vol_map: >- 
+    #      {% if ansible_loop.first %}{% set m = { 'v': []} %}
+    #      {% endif %}
+    #      {% if i['option_map']['volume'] is defined %}
+    #      {% for v in i.option_map.volume %}
+    #      {% set host =  v.split(':')[0] %}
+    #      {% set container = v.split(':')[1] %}
+    #      {% if v.split(':') | length >= 3 %}
+    #      {% set opts =  v.split(':')[2] %}
+    #      {% else %}
+    #      {% set opts = ''  %}
+    #      {% endif -%}{% set m  = m | combine( { 'host': host, 'container': container, 'opts': opts} ) %}{% endfor %}{% else %} {% endif %}
+    #      {% if ansible_loop.last %}{{ m.v |to_json }} {% endif %}
+    #  loop: "{{ container_chalk }}"
+    #  loop_control:
+    #    label: "{{ i.name }}"
+    #    extended: yes
+    #    loop_var: i
+- name: create volume dirs with specified UID
+  file:
+    owner: "{{ v.1.split(':')| last | regex_replace('[a-zA-Z=,/_-]+', '') | default('root') }}"
+    group: "{{ v.1.split(':')| last | regex_replace('[a-zA-Z=,/_-]+', '') | default('deploy') }}"
+    path: "{{ v.1.split(':')[0] }}"
+    mode: 0775
+    state: directory
+  loop: "{{ container_chalk |map(attribute='option_map')| list |subelements('volume') }}"
+  when: v.1 |regex_search('=' | string)
+  loop_control:
+    label: "{{ v.1.split(':') }}"
+    loop_var: v
+- name: create volume dirs
+  file:
+    owner: 'root'
+    group: 'deploy'
+    path: "{{ v.1.split(':')[0] }}"
+    mode: 0775
+    state: directory
+  loop: "{{ container_chalk |map(attribute='option_map')| list |subelements('volume') }}"
+  when: not ( v.1 |regex_search('=' | string) )
+  loop_control:
+    loop_var: v
+    #WORKING! = loop: "{{ container_chalk |map(attribute='option_map')| list |subelements('volume') }}"
+    
+    #  |product(option_map.volume "defined") | subelements('volume') }}"
+    #loop: "{{ container_chalk| flatten |select('option_map') |subelements(option_map.volume) }}"
+    #loop: "{{ container_chalk |select('option_map')|subelements('volume') }}"
+

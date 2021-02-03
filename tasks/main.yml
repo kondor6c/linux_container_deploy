@@ -33,3 +33,9 @@
   tags:
     - deploy
 
+- name: if firewalld is enabled, add masquerade to public. TODO: support non-firewalld
+  firewalld:
+    zone: public
+    permanent: yes
+    masquerade: yes
+  when: ansible_

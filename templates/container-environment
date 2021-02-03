@@ -1,0 +1,4 @@
+{% if deploy_app.option_map.env is defined %}{% for e in deploy_app.option_map.env  %}
+{{ e }}
+{% endfor %}{% endif %}
+

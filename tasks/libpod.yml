@@ -11,12 +11,33 @@
     path: /etc/containers
     mode: 0775
     state: directory
-- name: podman config
+- name: podman storage config
   template:
-    dest: /etc/containers/storage.conf
-    src: container-storage.conf.j2
-    mode: '0644'
+    dest: /etc/containers/
+    src: container-storage.conf
+    mode: 0644
     owner: root
     group: root
-
-
+- name: podman config
+  template:
+    dest: /etc/containers/
+    src: libpod.conf
+    mode: 0644
+    owner: root
+    group: root
+- name: 'check if EFI'
+  stat:
+    path: /sys/firmware/efi
+  register: efi
+- name: 'allow runc on new kernels'
+  lineinfile:
+    path: /etc/default/grub
+    regexp: '^GRUB_CMDLINE_LINUX="(.*)"$'
+    backrefs: yes
+    backup: true
+    line: 'GRUB_CMDLINE_LINUX="\g<1> systemd.unified_cgroup_hierarchy=0 "'
+- name: 'grub for EFI'
+  command: "grub2-mkconfig -o /boot/efi/EFI/{{ ansible_distribution | lower }}/grub.cfg"
+  when: efi.stat.exists
+- name: 'grub for BIOS'
+  command: grub2-mkconfig -o /boot/grub2/grub.cfg

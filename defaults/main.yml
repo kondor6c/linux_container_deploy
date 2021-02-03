@@ -1,15 +1,14 @@
 ---
-vars:
-  container_config_dir: /etc/devops/
-  run_apps: {}
-  default_cap_add:
-    - sys_time
-  default_cap_del:
-    - set_gid
-  default_cpu_alloc: 1
-  default_cpu_count: 1
-  default_mem: 1024
-  default_net: default
-  default_volumes:
-    - /mnt/containers/default:/var/lib/devops
-  default_block_weight: 1000
+container_config_dir: /etc/devops/
+default_cap_add:
+  - sys_time
+default_cap_del:
+  - set_gid
+default_cpu_alloc: 1
+default_cpu_count: 1
+default_mem: 1024
+default_net: default
+default_volumes:
+  - /mnt/containers/default:/var/lib/devops
+default_block_weight: 1000
+

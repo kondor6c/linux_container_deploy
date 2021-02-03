@@ -1,5 +1,7 @@
+# vim: set syntax=jinja
+{# This is a Very Large and Complex Jinja Template, the primary author suggests installing a Plugin that would add syntax highlighting for Jinja2 templates. Since everything else is a plain systemd file #}
 {# checking for options being set, apply defaults as needed #}
-{% if deploy_app.option_map.cpu_count is not defined %}
+{%- if deploy_app.option_map.cpu_count is not defined %}
 # action set default cpu old
 {% elif deploy_app.option_map.cap-del is not defined or deploy_app.option_map.cap-del | length < 1 %}
 # action set default cap-del
@@ -17,10 +19,8 @@
 # action set default network
 {% elif deploy_app.option_map.link is not defined %}
 # action set default link
-
 {% elif deploy_app.option_map.mount is not defined %}
 # action set default cpu old
-
 {% elif deploy_app.option_map.volume is not defined or deploy_app.option_map.volume | length < 1 %}
 {% set vol_list = ["/mnt/containers/{{ deploy_app.name }}:/srv"] %}
 {% elif deploy_app.option_map.publish is not defined or deploy_app.option_map.publish | length < 1 %}
@@ -33,41 +33,49 @@
 [Unit]
 Description=Container for {{ deploy_app.name }}
 # an Idea: Requires=devops-check-ports.service devops-check-fs.service docker-networks.service
-#After=container-{{ deploy_app.name }}-{{ deploy_app.host_port }}-config.service
-
-
+#After=container-{{ deploy_app.name }}--{{ deploy_app.host_port }}-config.service
 
 [Service]
 Restart=on-abnormal
-EnvironmentFile=-{{ container_config_dir }}{{ deploy_app.name }}/{{ deploy_app.host_port }}.systemd_env
-#ExecStartPre=/usr/bin/sha1sum -c /etc/container/config/{{ deploy_app.name }}/{{ deploy_app.host_port }}.env.sum
+EnvironmentFile=-{{ container_config_dir }}/{{ deploy_app.name }}/{{ deploy_app.host_port }}.systemd_env
 #ExecStartPre=/usr/bin/docker stop {{ deploy_app.name }}--{{ deploy_app.host_port }}
-{% if deploy_app.pre_hooks is defined %}
-ExecStartPre=-{{ deploy_app.pre_start_hooks }}
-{% endif %}
-ExecStart=/usr/bin/{{ container_engine }} run --env-file={{ container_config_dir }}{{ deploy_app.name }}/{{ deploy_app.host_port }}.container_environment \
-          --label-file={{ container_config_dir }}{{ deploy_app.name }}/{{ deploy_app.host_port }}.label \
+#ExecStartPre=/usr/bin/docker rename {{ deploy_app.name }}--{{ deploy_app.host_port }} old-{{ deploy_app.name }}--{{ deploy_app.host_port }}
+{% if deploy_app.hooks is defined %}{% for pre_cmd in deploy_app.hooks %}
+  ExecStartPre=-{{ pre_cmd }}
+  ExecStartPre=/usr/bin/{{ container_engine }} rm {{ deploy_app.name }}--{{ deploy_app.host_port }}
+{% endfor %}{% endif %}
+ExecStart=/usr/bin/{{ container_engine }} run --env-file={{ container_config_dir }}/{{ deploy_app.name }}/{{ deploy_app.host_port }}.container_environment \
+          --label-file={{ container_config_dir }}/{{ deploy_app.name }}/{{ deploy_app.host_port }}.label \
           --publish={{ deploy_app.host_port }}:{{ deploy_app.container_port }} \
-{% if deploy_app.option_map is defined and deploy_app.option_map | length < 1 %} {% for key, value in deploy_app.option_map.items() %}
-{% if value is iterable and value is not string %} {% for entry in value %} 
-          --{{ key }}={{ entry }} \ #list value={{ value }} and key={{key}}
-{% endfor %} {% elif value == "default" %} {% else %}
+{% if deploy_app.option_map is defined and deploy_app.option_map.items() | length >= 1 %}{% for key, value in deploy_app.option_map.items() %}
+{% if value is iterable and value is not string %}{%- for entry in value -%} 
+          {% if key == 'volume' %}
+          {# we make volumes have uid's so we can correct set the permissions on them, this not a standard thing #}
+          {% set entry = entry | regex_replace('.uid=[0-9].+', '' ) %}
+          {% elif key == 'cap-del' and container_engine == 'podman' %}
+          {# we make volumes have uid's so we can correct set the permissions on them, this not a standard thing #}
+          {% set key = 'cap-drop' %}
+          {% endif -%}
+          --{{ key }}={{ entry }} \
+{% endfor %}{% elif value == "default" %}
+          #default found for {{ key }} \
+{% else %}
           --{{ key }}={{ value }} \
-{% endif %} {% endfor %} {% endif %}
+{% endif %}{%- endfor %}{% endif %}
 {% if deploy_app.additional_options is defined and deploy_app.additional_options | length >= 1 %} {% for entry in deploy_app.additional_options %}
           {{ entry }} \
 {% endfor %}{% endif %}
           --mount type=tmpfs,tmpfs-size=32M,destination=/secrets \
-          --name {{ deploy_app.name }}--{{ deploy_app.host_port }} \
-          {{ deploy_app.registry_host | default("docker.io") }}/{{ deploy_app.project }}/{{ deploy_app.container_image_name }}:{{ deploy_app.container_image_version_tag }}
+          $OPTIONS_FROM_SYSTEMD_ENV_FILE --name {{ deploy_app.name }}--{{ deploy_app.host_port }} \
+          {{ deploy_app.registry_host | default("docker.io") }}/{{ deploy_app.project | default("library") }}/{{ deploy_app.container_image_name }}:{{ deploy_app.container_image_version_tag }}
 
-{% if deploy_app.post_start_hooks is defined %}
-ExecStartPost=-{{ deploy_app.pre_hooks }}
-{% endif %}
-{% if deploy_app.post_stop_hooks is defined %}
-ExecStartPost=-{{ deploy_app.pre_hooks }}
-{% endif %}
-ExecStop=/usr/bin/{{ container_engine }} rm -f {{ deploy_app.name }}--{{ deploy_app.host_port }}
+{% if deploy_app.hooks is defined %}{% for post_cmd in deploy_app.hooks %}
+  ExecStartPost=-{{ post_cmd }}
+{% endfor %}{%- endif %}
+ExecStop=/usr/bin/{{ container_engine }} rm {{ deploy_app.name }}--{{ deploy_app.host_port }}
+{% if deploy_app.hooks.post_stop is defined %}{% for stop_cmd in deploy_app.post_stop %}
+ExecStopPost=-{{ stop_cmd }}
+{% endfor %}{% endif %}
 KillMode=none
 #SuccessExitStatus=systemd-analyze exit-codes 
 TimeoutStartSec=infinity

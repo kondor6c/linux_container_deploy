@@ -11,14 +11,14 @@
     path: "{{ container_config_dir }}"
     owner: root
     group: deploy
-    mode: 770
+    mode: 0770
     state: directory
 - name: 'create per deployed application directory, allowing for unique settings per container'
   file:
-    path: "{{ container_config_dir }}{{ deploy_app.name }}/{{ deploy_app.host_port }}"
+    path: "{{ container_config_dir }}/{{ deploy_app.name }}/{{ deploy_app.host_port }}"
     owner: root
     group: deploy
-    mode: 770
+    mode: 0770
     state: directory
   loop: "{{ container_chalk }}"
   loop_control:
@@ -26,7 +26,7 @@
 - name: 'unique container environment file'
   template:
     src: container-environment
-    dest: "{{ container_config_dir }}{{ deploy_app.name }}/{{ deploy_app.host_port }}.container_environment"
+    dest: "{{ container_config_dir }}/{{ deploy_app.name }}/{{ deploy_app.host_port }}.container_environment"
     owner: 'root'
     group: 'deploy'
     mode: 0660
@@ -36,24 +36,42 @@
 - name: 'container labels'
   template:
     src: container.label
-    dest: "{{ container_config_dir }}{{ deploy_app.name }}/{{ deploy_app.host_port }}.label"
+    dest: "{{ container_config_dir }}/{{ deploy_app.name }}/{{ deploy_app.host_port }}.label"
     owner: 'root'
     group: 'deploy'
     mode: 0660
   loop: "{{ container_chalk }}"
   loop_control:
     loop_var: deploy_app
-- name: 'add block file'
+- name: 'add lock file, this would prevent a deploy from occuring on the given host. Similar to a Lock and would allow for multiple deploy mechanisms'
   file:
-    path: "{{ container_config_dir }}{{ deploy_app.name }}/{{ deploy_app.host_port }}__block"
+    path: "{{ container_config_dir }}/{{ deploy_app.name }}/{{ deploy_app.host_port }}__lock"
     owner: root
     group: root
-    mode: 400
+    mode: 0400
     state: touch
   loop: "{{ container_chalk }}"
   loop_control:
     loop_var: deploy_app
+#- name: 'create container volumes'
+#  file:
+#    path: "{{ item.1.split(':') }}"
+#    owner: root
+#    group: deploy
+#    mode: 775
+#    state: directory
+#  loop: "{{ container_chalk |subelements(option_map.volume, 'skip_missing=True') }}"
+#  when: "{{ container_chalk[0].option_map is defined}}"
 
+- name: 'create defined cache dir'
+  file:
+    path: "{{ container_cache_dir }}"
+    owner: root
+    group: deploy
+    mode: 0770
+    setype: container_var_lib_t
+    state: directory
+  when: container_cache_dir is defined
 - name: 'clean stale and dead/inactive containers'
   template:
     src: container-cleaner.service
@@ -75,7 +93,6 @@
     group: 'deploy'
     mode: 0660
 
-
 - name: 'debug systemd unit'
   block:
     - name: 'add block file'
@@ -83,7 +100,7 @@
         path: "/etc/systemd/system/{{ deploy_app.name }}--{{ deploy_app.host_port }}.service.d"
         owner: root
         group: root
-        mode: 774
+        mode: 0774
         state: directory
       loop: "{{ container_chalk }}"
       loop_control:
@@ -122,14 +139,14 @@
   loop: "{{ container_chalk }}"
   loop_control:
     loop_var: deploy_app
-- name: 'start app container service'
+- name: 'Restart app container service if we modified it during this deployment'
   systemd:
     daemon_reload: yes
-    name: "{{ deploy_app.name }}--{{ deploy_app.host_port }}.service"
+    name: "{{ deploy_app }}"
     state: restarted
     enabled: yes 
-  when: app_systemd_unit.changed #no need to restart a non-changed unit file, TODO: add support for config files/path changed
-  loop: "{{ container_chalk }}"
+  when: deploy_app.changed #no need to restart a non-changed unit file, TODO: add support for config files/path changed
+  loop: "{{ app_systemd_unit }}"
   loop_control:
     loop_var: deploy_app
 - name: "start the config watcher path unit"
