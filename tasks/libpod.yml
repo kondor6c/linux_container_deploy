@@ -1,9 +1,13 @@
 ---
 - name: install podman
   package:
-    name: podman
     state: installed
     update_cache: no
+    name: "{{ item }}"
+  loop:
+    - podman
+    - crun
+    - runc
 - name: create dir first
   file:
     owner: root

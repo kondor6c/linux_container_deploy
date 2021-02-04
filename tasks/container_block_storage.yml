@@ -6,14 +6,14 @@
 #  loop: "{{ ansible_mounts }}"
 #  loop_control:
 #    loop_var: disk
-- name: device
+- name: xfs for the container storage
   block:
-    - name: 'xfs for containers'
+    - name: 'we ensure that we are not formatting an existing, mounted filesystem'
       filesystem:
         fstype: xfs
         dev: "/dev/{{ container_block_device }}"
         opts:  -n ftype=1
-      when: ansible_mounts | selectattr('device', 'equalto', "/dev/" + disk.key) | list | length < 1 and disk.key == container_block_device
+      when: (ansible_mounts | selectattr('device', 'equalto', "/dev/" + disk.key) | list | length < 1 ) and disk.key == container_block_device
       loop: "{{ ansible_devices | dict2items }}"
       register: formatted
       loop_control:
@@ -27,8 +27,8 @@
         fstype: xfs
         opts: noatime
         src: "/dev/{{ container_block_device }}"
-      when: formatted.success
-      loop: "{{ ansible_devices | dict2items }}"
+      when: disk.changed |bool
+      loop: "{{ formatted.results }}"
       loop_control:
         loop_var: disk
       tags:

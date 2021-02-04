@@ -1,11 +1,6 @@
 ---
 # deploy-app:
 # takes an "app" dict (defined in vars) and deploys systemd files for it, then starts it
-- name: deploy group
-  group:
-    name: deploy
-    gid: 7000
-    state: present
 - name: 'create defined config dir'
   file:
     path: "{{ container_config_dir }}"
@@ -142,11 +137,11 @@
 - name: 'Restart app container service if we modified it during this deployment'
   systemd:
     daemon_reload: yes
-    name: "{{ deploy_app }}"
+    name: "{{ deploy_app.dest | basename }}"
     state: restarted
     enabled: yes 
-  when: deploy_app.changed #no need to restart a non-changed unit file, TODO: add support for config files/path changed
-  loop: "{{ app_systemd_unit }}"
+  when: deploy_app.changed |bool #no need to restart a non-changed unit file, TODO: add support for config files/path changed
+  loop: "{{ app_systemd_unit.results }}"
   loop_control:
     loop_var: deploy_app
 - name: "start the config watcher path unit"

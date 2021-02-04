@@ -1,4 +1,9 @@
 ---
+- name: deploy group
+  group:
+    name: deploy
+    gid: 7000
+    state: present
 - name: configure storage
   include_tasks: "container_block_storage.yml"
   when: container_block_device is defined
@@ -33,9 +38,9 @@
   tags:
     - deploy
 
-- name: if firewalld is enabled, add masquerade to public. TODO: support non-firewalld
-  firewalld:
-    zone: public
-    permanent: yes
-    masquerade: yes
-  when: ansible_
+#- name: if firewalld is enabled, add masquerade to public. TODO--support non-firewalld
+#  firewalld:
+#    zone: public
+#    permanent: yes
+#    masquerade: yes
+#  when: ansible_

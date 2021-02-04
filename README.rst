@@ -209,7 +209,7 @@ Including an example of how to use your role (for instance, with variables passe
               - " --env BACKEND_IP=192.168.122.37 "
     - hosts: workers
       roles:
-         - { role: container-deploy, container_block_device: "/dev/vdb", container_engine: "podman" }
+         - { role: linux_container_deploy, container_block_device: "/dev/vdb", container_engine: "podman" }
 
 
 TODO
