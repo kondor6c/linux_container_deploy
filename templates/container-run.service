@@ -42,12 +42,11 @@ EnvironmentFile=-{{ container_config_dir }}/{{ deploy_app.name }}/{{ deploy_app.
 #ExecStartPre=/usr/bin/docker rename {{ deploy_app.name }}--{{ deploy_app.host_port }} old-{{ deploy_app.name }}--{{ deploy_app.host_port }}
 {% if deploy_app.hooks is defined %}{% for pre_cmd in deploy_app.hooks %}
   ExecStartPre=-{{ pre_cmd }}
-  ExecStartPre=/usr/bin/{{ container_engine }} rm {{ deploy_app.name }}--{{ deploy_app.host_port }}
 {% endfor %}{% endif %}
-ExecStart=/usr/bin/{{ container_engine }} run --env-file={{ container_config_dir }}/{{ deploy_app.name }}/{{ deploy_app.host_port }}.container_environment \
+ExecStart=/usr/bin/{{ container_engine }} create --env-file={{ container_config_dir }}/{{ deploy_app.name }}/{{ deploy_app.host_port }}.container_environment \
           --label-file={{ container_config_dir }}/{{ deploy_app.name }}/{{ deploy_app.host_port }}.label \
           --publish={{ deploy_app.host_port }}:{{ deploy_app.container_port }} \
-{% if deploy_app.option_map is defined and deploy_app.option_map.items() | length >= 1 %}{% for key, value in deploy_app.option_map.items() %}
+{% if deploy_app.option_map is defined and deploy_app.option_map.items() | length >= 1 %}{%- for key, value in deploy_app.option_map.items() -%}
 {% if value is iterable and value is not string %}{%- for entry in value -%} 
           {% if key == 'volume' %}
           {# we make volumes have uid's so we can correct set the permissions on them, this not a standard thing #}
@@ -57,7 +56,7 @@ ExecStart=/usr/bin/{{ container_engine }} run --env-file={{ container_config_dir
           {% set key = 'cap-drop' %}
           {% endif -%}
           --{{ key }}={{ entry }} \
-{% endfor %}{% elif value == "default" %}
+{%- endfor -%}{% elif value == "default" %}
           #default found for {{ key }} \
 {% else %}
           --{{ key }}={{ value }} \
@@ -67,12 +66,14 @@ ExecStart=/usr/bin/{{ container_engine }} run --env-file={{ container_config_dir
 {% endfor %}{% endif %}
           --mount type=tmpfs,tmpfs-size=32M,destination=/secrets \
           $OPTIONS_FROM_SYSTEMD_ENV_FILE --name {{ deploy_app.name }}--{{ deploy_app.host_port }} \
-          {{ deploy_app.registry_host | default("docker.io") }}/{{ deploy_app.project | default("library") }}/{{ deploy_app.container_image_name }}:{{ deploy_app.container_image_version_tag }}
+          {{ deploy_app.registry_host | default("docker.io") }}/{{ deploy_app.project | default("library") }}/{{ deploy_app.container_image_name }}:{{ deploy_app.container_image_version_tag }} {{ deploy_app.arg_execute | default('') }}
 
+ExecStartPost=/usr/bin/{{ contianer_engine }} start {{ deploy_app.name }}--{{ deploy_app.host_port }}
 {% if deploy_app.hooks is defined %}{% for post_cmd in deploy_app.hooks %}
   ExecStartPost=-{{ post_cmd }}
 {% endfor %}{%- endif %}
-ExecStop=/usr/bin/{{ container_engine }} rm {{ deploy_app.name }}--{{ deploy_app.host_port }}
+ExecStop=/usr/bin/{{ container_engine }} stop {{ deploy_app.name }}--{{ deploy_app.host_port }}
+ExecStopPost=/usr/bin/{{ container_engine }} rm {{ deploy_app.name }}--{{ deploy_app.host_port }}
 {% if deploy_app.hooks.post_stop is defined %}{% for stop_cmd in deploy_app.post_stop %}
 ExecStopPost=-{{ stop_cmd }}
 {% endfor %}{% endif %}

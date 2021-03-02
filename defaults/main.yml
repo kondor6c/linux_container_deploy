@@ -11,4 +11,7 @@ default_net: default
 default_volumes:
   - /mnt/containers/default:/var/lib/devops
 default_block_weight: 1000
-
+storage_volume: "/var/lib/containers/storage/volumes"
+oci_runtime: crun
+storage_container_main: "/var/lib/containers"
+storage_container_pre_cache: "/mnt/containers/cache"

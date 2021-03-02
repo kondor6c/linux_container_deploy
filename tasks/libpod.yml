@@ -8,6 +8,7 @@
     - podman
     - crun
     - runc
+
 - name: create dir first
   file:
     owner: root
@@ -15,6 +16,7 @@
     path: /etc/containers
     mode: 0775
     state: directory
+
 - name: podman storage config
   template:
     dest: /etc/containers/
@@ -22,6 +24,7 @@
     mode: 0644
     owner: root
     group: root
+
 - name: podman config
   template:
     dest: /etc/containers/
@@ -29,10 +32,16 @@
     mode: 0644
     owner: root
     group: root
+      #- name: 'check if fapolicy installed'
+      #  stat:
+      #    path: /etc/fapolicy
+      #  register: efi
+
 - name: 'check if EFI'
   stat:
     path: /sys/firmware/efi
   register: efi
+
 - name: 'allow runc on new kernels'
   lineinfile:
     path: /etc/default/grub
@@ -40,8 +49,11 @@
     backrefs: yes
     backup: true
     line: 'GRUB_CMDLINE_LINUX="\g<1> systemd.unified_cgroup_hierarchy=0 "'
+
 - name: 'grub for EFI'
   command: "grub2-mkconfig -o /boot/efi/EFI/{{ ansible_distribution | lower }}/grub.cfg"
   when: efi.stat.exists
+
 - name: 'grub for BIOS'
   command: grub2-mkconfig -o /boot/grub2/grub.cfg
+

@@ -20,6 +20,7 @@
         loop_var: disk
       tags:
         - storage
+
     - name: mount storage
       mount:
         path: /var/lib/containers
@@ -35,7 +36,7 @@
         - storage
   when: container_block_device is defined
 #- name: pull the images
-#  shell: "{{ container_engine }} pull {{ c.registry_host }}/{{ c.project }}/{{ c.container_image_name }}:{{ c.container_image_version_tag }}  "
+#  shell: "{{ container_engine }} pull {{ c.registry_host }}/{{ c.project }}/{{ c.container_image_name }}:{{ c.container_image_version_tag }}"
 #  tags:
 #    - intensive
 #  when: container_chalk is defined 
@@ -92,31 +93,42 @@
     #    label: "{{ i.name }}"
     #    extended: yes
     #    loop_var: i
-- name: create volume dirs with specified UID
+###
+# due to all of this, specifying option_map AND volume is required... sucks, but now directories are properly chowned with automation
+# I had tried to compose a new volume map above to work around this, but its complicated...
+# This is also where we might set each container's SELinux MCS, which would use the port (pretty much the unique number for the container on the host)
+###
+
+- name: "create volume dirs with specified UID designated by '=' "
   file:
     owner: "{{ v.1.split(':')| last | regex_replace('[a-zA-Z=,/_-]+', '') | default('root') }}"
     group: "{{ v.1.split(':')| last | regex_replace('[a-zA-Z=,/_-]+', '') | default('deploy') }}"
     path: "{{ v.1.split(':')[0] }}"
+    setype: container_file_t  #only type that is writeable by containers, we specify it here in order to help cement setting setypes everytime we set the mode or owner!
+    # If you  volume mount in a directory into  a container and add a :z or :Z the container engines relabeled the content under the volumes to container_file_t
     mode: 0775
     state: directory
   loop: "{{ container_chalk |map(attribute='option_map')| list |subelements('volume') }}"
   when: v.1 |regex_search('=' | string)
+  register: uid_container_path
   loop_control:
     label: "{{ v.1.split(':') }}"
     loop_var: v
-- name: create volume dirs
+
+- name: create volume dirs, when NO UID is specified (previous directory fails)
   file:
     owner: 'root'
     group: 'deploy'
-    path: "{{ v.1.split(':')[0] }}"
+    path: "{{ each_container_volume.1.split(':')[0] }}"
+    setype: container_file_t
     mode: 0775
     state: directory
-  loop: "{{ container_chalk |map(attribute='option_map')| list |subelements('volume') }}"
-  when: not ( v.1 |regex_search('=' | string) )
+  loop: "{{ container_chalk |map(attribute='option_map') | list |subelements('volume') }}"
+  when: not ( each_container_volume.1 |regex_search('=' | string) )
   loop_control:
-    loop_var: v
+    loop_var: each_container_volume
     #WORKING! = loop: "{{ container_chalk |map(attribute='option_map')| list |subelements('volume') }}"
-    
+
     #  |product(option_map.volume "defined") | subelements('volume') }}"
     #loop: "{{ container_chalk| flatten |select('option_map') |subelements(option_map.volume) }}"
     #loop: "{{ container_chalk |select('option_map')|subelements('volume') }}"

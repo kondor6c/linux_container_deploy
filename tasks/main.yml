@@ -34,7 +34,7 @@
 - name: deploy container
   include_tasks:
     file: "systemd-container.yml"
-  when: container_chalk
+  when: container_chalk | bool
   tags:
     - deploy
 
