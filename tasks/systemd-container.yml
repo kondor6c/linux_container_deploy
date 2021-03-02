@@ -73,7 +73,7 @@
     dest: /etc/systemd/system/
     owner: 'root'
     group: 'deploy'
-    mode: 0660
+    mode: 0664
 - name: 'clean containers'
   systemd:
     daemon_reload: yes
@@ -86,7 +86,7 @@
     dest: /etc/systemd/system/
     owner: 'root'
     group: 'deploy'
-    mode: 0660
+    mode: 0664
 
 - name: 'debug systemd unit'
   block:
@@ -119,7 +119,7 @@
     dest: "/etc/systemd/system/{{ deploy_app.name }}--{{ deploy_app.host_port }}.path"
     owner: 'root'
     group: 'deploy'
-    mode: 0660
+    mode: 0664
   loop: "{{ container_chalk }}"
   loop_control:
     loop_var: deploy_app
