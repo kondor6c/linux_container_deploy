@@ -132,4 +132,12 @@
     #  |product(option_map.volume "defined") | subelements('volume') }}"
     #loop: "{{ container_chalk| flatten |select('option_map') |subelements(option_map.volume) }}"
     #loop: "{{ container_chalk |select('option_map')|subelements('volume') }}"
+    #
+- name: if storage is elsewhere, set the same context
+  sefcontext:
+    target: "{{ storage_containers_main }}"
+    setype: container_var_lib_t
+    state: present
+- name: ensure contexts are set
+  command: "restorecon -Rv {{ storage_containers_main }}"
 

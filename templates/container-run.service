@@ -43,22 +43,22 @@ EnvironmentFile=-{{ container_config_dir }}/{{ deploy_app.name }}/{{ deploy_app.
 {% if deploy_app.hooks is defined %}{% for pre_cmd in deploy_app.hooks %}
   ExecStartPre=-{{ pre_cmd }}
 {% endfor %}{% endif %}
-ExecStart=/usr/bin/{{ container_engine }} create --env-file={{ container_config_dir }}/{{ deploy_app.name }}/{{ deploy_app.host_port }}.container_environment \
+ExecStart=/usr/bin/{{ container_engine }} run --env-file={{ container_config_dir }}/{{ deploy_app.name }}/{{ deploy_app.host_port }}.container_environment \
           --label-file={{ container_config_dir }}/{{ deploy_app.name }}/{{ deploy_app.host_port }}.label \
           --publish={{ deploy_app.host_port }}:{{ deploy_app.container_port }} \
-{% if deploy_app.option_map is defined and deploy_app.option_map.items() | length >= 1 %}{%- for key, value in deploy_app.option_map.items() -%}
-{% if value is iterable and value is not string %}{%- for entry in value -%} 
-          {% if key == 'volume' %}
+{% if deploy_app.option_map is defined and deploy_app.option_map.items() | length >= 1 %}{%- for key, value in deploy_app.option_map.items() %}
+{% if value is iterable and value is not string %}{%- for entry in value %}
+          {% if key == 'volume' -%}
           {# we make volumes have uid's so we can correct set the permissions on them, this not a standard thing #}
-          {% set entry = entry | regex_replace('.uid=[0-9].+', '' ) %}
-          {% elif key == 'cap-del' and container_engine == 'podman' %}
+          {%- set entry = entry | regex_replace('.uid=[0-9].+', '' ) %}
+          {%- elif key == 'cap-del' and container_engine == 'podman' %}
           {# we make volumes have uid's so we can correct set the permissions on them, this not a standard thing #}
-          {% set key = 'cap-drop' %}
-          {% endif -%}
+          {%- set key = 'cap-drop' %}
+          {%- endif -%}
           --{{ key }}={{ entry }} \
-{%- endfor -%}{% elif value == "default" %}
+{% endfor -%}{% elif value == "default" %}
           #default found for {{ key }} \
-{% else %}
+{%- else -%}
           --{{ key }}={{ value }} \
 {% endif %}{%- endfor %}{% endif %}
 {% if deploy_app.additional_options is defined and deploy_app.additional_options | length >= 1 %} {% for entry in deploy_app.additional_options %}
@@ -68,7 +68,6 @@ ExecStart=/usr/bin/{{ container_engine }} create --env-file={{ container_config_
           $OPTIONS_FROM_SYSTEMD_ENV_FILE --name {{ deploy_app.name }}--{{ deploy_app.host_port }} \
           {{ deploy_app.registry_host | default("docker.io") }}/{{ deploy_app.project | default("library") }}/{{ deploy_app.container_image_name }}:{{ deploy_app.container_image_version_tag }} {{ deploy_app.arg_execute | default('') }}
 
-ExecStartPost=/usr/bin/{{ contianer_engine }} start {{ deploy_app.name }}--{{ deploy_app.host_port }}
 {% if deploy_app.hooks is defined %}{% for post_cmd in deploy_app.hooks %}
   ExecStartPost=-{{ post_cmd }}
 {% endfor %}{%- endif %}

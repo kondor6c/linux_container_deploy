@@ -2,7 +2,7 @@
 - name: deploy group
   group:
     name: deploy
-    gid: 7000
+    gid: 2000
     state: present
 - name: configure storage
   include_tasks: "container_block_storage.yml"
@@ -31,10 +31,10 @@
   loop_control:
     loop_var: engine_name
 
-- name: deploy container
+- name: deploy containers listed
   include_tasks:
     file: "systemd-container.yml"
-  when: container_chalk | bool
+  when: container_chalk | list | length >= 1 
   tags:
     - deploy
 

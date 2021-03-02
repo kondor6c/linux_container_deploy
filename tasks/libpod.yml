@@ -19,17 +19,19 @@
 
 - name: podman storage config
   template:
-    dest: /etc/containers/
+    dest: /etc/containers/storage.conf
     src: container-storage.conf
     mode: 0644
+    setype: etc_t
     owner: root
     group: root
 
 - name: podman config
   template:
     dest: /etc/containers/
-    src: libpod.conf
+    src: containers.conf
     mode: 0644
+    setype: etc_t
     owner: root
     group: root
       #- name: 'check if fapolicy installed'
