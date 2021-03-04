@@ -9,6 +9,10 @@
     - crun
     - runc
 
+- name: Check to see if we are booting with EFI or UEFI (from ansible_hardening role)
+  set_fact:
+    booted_with_efi: "{{ ansible_mounts | selectattr('mount', 'equalto', '/boot/efi') | list | length > 0 }}"
+
 - name: create dir first
   file:
     owner: root
@@ -51,11 +55,13 @@
     backrefs: yes
     backup: true
     line: 'GRUB_CMDLINE_LINUX="\g<1> systemd.unified_cgroup_hierarchy=0 "'
+  register: altered_grub
 
 - name: 'grub for EFI'
   command: "grub2-mkconfig -o /boot/efi/EFI/{{ ansible_distribution | lower }}/grub.cfg"
-  when: efi.stat.exists
+  when: efi.stat.exists and altered_grub.changed
 
 - name: 'grub for BIOS'
   command: grub2-mkconfig -o /boot/grub2/grub.cfg
+  when: ! efi.stat.exists and (altered_grub.changed == True)
 
